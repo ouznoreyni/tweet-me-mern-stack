@@ -1,62 +1,162 @@
 const _ = require('lodash')
-import { validateUser } from '../validations/user'
+const winston = require('winston')
+import { validateUpdate } from '../validations/user'
 const asyncHandler = require('express-async-handler')
 const { default: User } = require('../models/user')
-// @desc    Auth user & get token
-// @route   POST /api/users/login
-// @access  Public
-const login = asyncHandler(async (req, res) => {
-  //validate user data
-  const { error } = validateUser(req.body, true)
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message })
-  }
 
-  const { username, password } = req.body
-  const user = await User.findOne({ username })
-  if (!user) {
-    return res.status(401).json({ message: 'login or password incorrect' })
-  }
-  const passwordMatch = await user.matchPassword(password)
-  if (!passwordMatch) {
-    return res.status(401).json({ message: 'login or password incorrect' })
-  }
-  const token = user.generateToken()
-  return res.status(200).json({ token })
-})
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
-const register = asyncHandler(async (req, res) => {
-  //validate user data
-  const { error } = validateUser(req.body)
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message })
-  }
-
-  const { username } = req.body
-  const userExiste = await User.findOne({ username })
-  if (userExiste) {
-    return res.status(400).json({ message: 'user already existe' })
-  }
-
-  // //createUser
-  const user = await User.create(
-    _.pick(req.body, ['firstName', 'lastName', 'username', 'password'])
-  )
-  // //return token
-  const token = user.generateToken()
-  delete user['password']
-  return res.status(201).json({
-    user: _.pick(user, [
-      '_id',
-      'firstName',
-      'lastName',
-      'username',
-      'createdAt',
-    ]),
-    token,
-  })
+// @desc    get all users
+// @route   GET /api/users
+// @access  Private
+export const all = asyncHandler(async (req, res) => {
+  const users = await User.find().select('-password')
+  return res.status(200).json({ users })
 })
 
-export { login, register }
+// @desc    get a user by id
+// @route   GET /api/users/:_id
+// @access  Private
+export const find = asyncHandler(async (req, res) => {
+  const { _id } = req.params
+
+  try {
+    const user = await User.findById(_id).select('-password')
+
+    if (!user) {
+      return res.status(404).json({ message: 'user not found' })
+    }
+
+    return res.status(200).json({ user })
+  } catch (error) {
+    return res.status(500).json({ message: 'An error happen' })
+  }
+})
+// @desc    get a user profil
+// @route   GET /api/users/profil
+// @access  Private
+export const myProfil = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password')
+    return res.status(200).json({ user })
+  } catch (error) {
+    return res.status(500).json({ message: 'An error happen' })
+  }
+})
+
+// @desc    Update user profile
+// @route   PUT /api/users/profil
+// @access  Private
+export const updateProfil = asyncHandler(async (req, res) => {
+  try {
+    //get user
+    const user = await User.findById(req.user._id)
+    if (!user) {
+      return res.status(404).json({ message: 'user not found' })
+    }
+    //validate data
+    const { error } = validateUpdate(req.body)
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message })
+    }
+
+    //update user
+    for (const key in req.body) {
+      if (user[key]) {
+        user[key] = req.body[key]
+      }
+    }
+    const userUpdated = await user.save()
+
+    return res.status(200).json({
+      user: _.pick(userUpdated, [
+        '_id',
+        'firstName',
+        'lastName',
+        'username',
+        'createdAt',
+        'updatedAt',
+      ]),
+    })
+  } catch (error) {
+    return res.status(500).json({ message: 'An error happen' })
+  }
+})
+
+// @desc    Delete a user
+// @route   DELETE /api/users/id
+// @access  Private
+export const remove = asyncHandler(async (req, res) => {
+  const { _id } = req.params
+
+  try {
+    const user = await User.findByIdAndDelete(_id).select('-password')
+    if (!user) {
+      return res.status(404).json({ message: 'user does not exist' })
+    }
+    return res.status(204).json({ message: 'user delete' })
+  } catch (error) {
+    return res.status(500).json({ message: 'An error happen' })
+  }
+})
+// @desc    Follow a user
+// @route   PUT /api/users/follow
+// @access  Private
+export const follow = asyncHandler(async (req, res) => {
+  try {
+    const { _id } = req.params
+
+    //user to follow
+    const userToFollow = await User.findOne({ _id }).select('-password')
+
+    if (!userToFollow) {
+      return res.status(404).json({ message: 'user not found' })
+    }
+    // set following and follower
+    const user = req.user
+    if (user.following && user.following.includes(userToFollow._id)) {
+      return res.status(500).json({ message: 'user allready followed' })
+    }
+    user.following.push(userToFollow)
+    userToFollow.followers.push(user)
+
+    await user.save()
+    await userToFollow.save()
+
+    return res.status(200).json({ user })
+  } catch (error) {
+    winston.error(error.message)
+    return res.status(500).json({ error: error.message })
+  }
+})
+
+// @desc    Unfollow a user
+// @route   PUT /api/users/unfollow
+// @access  Private
+export const unfollow = asyncHandler(async (req, res) => {
+  try {
+    const { _id } = req.params
+    //user to unfollow
+    const userToUnFollow = await User.findOne({ _id }).select('-password')
+
+    if (!userToUnFollow) {
+      return res.status(404).json({ message: 'user not found' })
+    }
+    // set unfollowing
+    const user = req.user
+    if (user.following && !user.following.includes(userToUnFollow._id)) {
+      return res.status(500).json({ message: 'user is not followed' })
+    }
+
+    const indexOfUserToUnfollow = user.following.indexOf(userToUnFollow._id)
+    user.following.splice(indexOfUserToUnfollow, 1)
+
+    const indexOfUserfollowed = userToUnFollow.followers.indexOf(user._id)
+    userToUnFollow.followers.splice(indexOfUserfollowed, 1)
+    await user.save()
+    await userToUnFollow.save()
+
+    return res.status(200).json({ user: 'unfollowed' })
+  } catch (error) {
+    winston.error(error.message)
+    return res.status(500).json({ error: error.message })
+  }
+})

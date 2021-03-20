@@ -27,6 +27,8 @@ const userSchema = new mongoose.Schema(
     birthday: {
       type: Date,
     },
+    following: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+    followers: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 )
@@ -45,6 +47,7 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.generateToken = function (data) {
   const token = jwt.sign(
     {
+      _id: this._id,
       firstName: this.firstName,
       lastName: this.lastName,
       username: this.username,
