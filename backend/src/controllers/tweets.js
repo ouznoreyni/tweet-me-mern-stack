@@ -30,6 +30,29 @@ export const find = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc    get all tweet from users I followed
+// @route   GET /api/tweets/followings
+// @access  Private
+export const findTweetFollowedUser = asyncHandler(async (req, res) => {
+  try {
+    const { following } = req.user
+    const tweets = await Tweet.find({
+      author: {
+        $in: following,
+      },
+    })
+    console.log(following)
+    // const tweet = await Tweet.findById(_id)
+    // if (!tweet) {
+    //   return res.status(404).json({ error: 'Tweet not found' })
+    // }
+
+    return res.status(200).json({ tweets: 'followed tweets' })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
+  }
+})
+
 // @desc    POST a tweet
 // @route   POST /api/tweets/
 // @access  Private

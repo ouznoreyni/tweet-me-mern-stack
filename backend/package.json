@@ -6,6 +6,8 @@
   "scripts": {
     "build": "babel src --out-dir dist",
     "dev": "nodemon --exec yarn restart",
+    "data:load": "node src/seeder",    
+    "data:destroy": "node src/seeder -d",
     "restart": "rimraf dist && yarn build && yarn start",
     "start": "node dist/index.js"
   },

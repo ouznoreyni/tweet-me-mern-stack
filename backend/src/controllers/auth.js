@@ -1,5 +1,5 @@
 const _ = require('lodash')
-import { validateUser } from '../validations/user'
+const { validateUser } = require('../validations/user')
 const asyncHandler = require('express-async-handler')
 const { default: User } = require('../models/user')
 // @desc    Auth user & get token
