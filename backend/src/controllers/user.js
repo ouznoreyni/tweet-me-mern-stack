@@ -1,8 +1,8 @@
 const _ = require('lodash')
 const winston = require('winston')
-import { validateUpdate } from '../validations/user'
 const asyncHandler = require('express-async-handler')
 const { default: User } = require('../models/user')
+import { validateUpdate } from '../validations/user'
 
 // @desc    get all users
 // @route   GET /api/users
