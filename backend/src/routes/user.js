@@ -1,12 +1,13 @@
 const express = require('express')
 const user = require('../controllers/user')
 const { protect, admin } = require('../middleware/auth')
+const { uploadFile } = require('../utils/upload')
 const router = express.Router()
 
 router
   .route('/profil')
   .get([protect], user.myProfil)
-  .put([protect], user.updateProfil)
+  .put([protect, uploadFile('users', 'avatar')], user.updateProfil)
 router
   .route('/:_id')
   .get([protect], user.find)

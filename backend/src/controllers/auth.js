@@ -45,7 +45,6 @@ const register = asyncHandler(async (req, res) => {
     const user = await User.create(
       _.pick(req.body, ['firstName', 'lastName', 'username', 'password'])
     )
-    console.log(user)
     // //return token
     const token = user.generateToken()
     delete user['password']

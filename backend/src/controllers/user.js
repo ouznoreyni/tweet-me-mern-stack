@@ -2,6 +2,7 @@ const _ = require('lodash')
 const winston = require('winston')
 const asyncHandler = require('express-async-handler')
 const { default: User } = require('../models/user')
+import { validateFile } from '../utils/upload'
 import { validateUpdate } from '../validations/user'
 
 // @desc    get all users
@@ -77,7 +78,7 @@ export const updateProfil = asyncHandler(async (req, res) => {
       ]),
     })
   } catch (error) {
-    return res.status(500).json({ message: 'An error happen' })
+    return res.status(500).json({ error: error.message })
   }
 })
 

@@ -27,6 +27,12 @@ const userSchema = new mongoose.Schema(
     birthday: {
       type: Date,
     },
+    profil: {
+      avatar: { type: String },
+      bio: { type: String },
+      localisation: { type: String },
+      website: { type: String },
+    },
     following: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
     followers: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
   },
