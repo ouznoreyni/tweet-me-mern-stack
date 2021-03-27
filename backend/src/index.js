@@ -1,6 +1,7 @@
 const express = require('express')
 const winston = require('winston')
 const morgan = require('morgan')
+const cors = require('cors')
 const DB_CONNECTION = require('./startup/db')
 const userRouter = require('./routes/user')
 const logger = require('./startup/logging')
@@ -9,6 +10,8 @@ require('dotenv').config()
 DB_CONNECTION()
 
 const app = express()
+app.use(cors())
+
 app.use(express.json())
 
 if (process.env.NODE_ENV !== 'production') {
