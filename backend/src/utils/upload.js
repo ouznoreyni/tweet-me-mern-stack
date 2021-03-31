@@ -1,11 +1,14 @@
-import path from 'path'
-
 const multer = require('multer')
+const fs = require('fs')
+const path = require('path')
+
+const dir = path.join(`${__dirname}/../../../uploads`)
 
 export const uploadFile = (folderDestination, file) => {
   const date = new Date()
   const dateUpload = `${date.getDate()}-${date.getMonth()}-${date.getFullYear()}`
-  const dest = `uploads/${folderDestination}/${dateUpload}`
+  const dest = `${dir}/${folderDestination}/${dateUpload}`
+
   function checkFileType(file, cb) {
     const filetypes = /jpg|jpeg|png/
     const extname = filetypes.test(
@@ -22,6 +25,9 @@ export const uploadFile = (folderDestination, file) => {
 
   var storage = multer.diskStorage({
     destination: function (req, file, cb) {
+      if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true })
+      }
       cb(null, dest)
     },
     filename: function (req, file, cb) {

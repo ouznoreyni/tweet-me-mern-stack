@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
     profil: {
-      avatar: { type: String },
+      avatar: { data: Buffer, contentType: String },
       bio: { type: String },
       localisation: { type: String },
       website: { type: String },

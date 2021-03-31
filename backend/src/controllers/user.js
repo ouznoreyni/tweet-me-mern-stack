@@ -66,6 +66,11 @@ export const updateProfil = asyncHandler(async (req, res) => {
     if (req.body['profil']) {
       profil = _.pick(req.body.profil, profilField)
       delete req.body.profil
+
+      if (req.file) {
+        const avatar = { contentType: req.file.mimetype, data: req.file.path }
+        profil.avatar = avatar
+      }
     }
     const data = _.pick(req.body, ['firstName', 'lastName', 'username'])
     const userUpdated = await User.findOneAndUpdate(
