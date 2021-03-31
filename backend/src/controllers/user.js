@@ -49,23 +49,32 @@ export const myProfil = asyncHandler(async (req, res) => {
 export const updateProfil = asyncHandler(async (req, res) => {
   try {
     //get user
-    const user = await User.findById(req.user._id)
+    const user = await User.findById(req.user._id).populate('profil')
     if (!user) {
       return res.status(404).json({ message: 'user not found' })
     }
+
     //validate data
     const { error } = validateUpdate(req.body)
     if (error) {
       return res.status(400).json({ message: error.details[0].message })
     }
 
+    const profilField = ['avatar', 'bio', 'localisation', 'website']
+    let profil = {}
     //update user
-    for (const key in req.body) {
-      if (user[key]) {
-        user[key] = req.body[key]
-      }
+    if (req.body['profil']) {
+      profil = _.pick(req.body.profil, profilField)
+      delete req.body.profil
     }
-    const userUpdated = await user.save()
+    const data = _.pick(req.body, ['firstName', 'lastName', 'username'])
+    const userUpdated = await User.findOneAndUpdate(
+      user._id,
+      { profil, ...data },
+      {
+        new: true,
+      }
+    ).populate('profil')
 
     return res.status(200).json({
       user: _.pick(userUpdated, [
@@ -73,6 +82,7 @@ export const updateProfil = asyncHandler(async (req, res) => {
         'firstName',
         'lastName',
         'username',
+        'profil',
         'createdAt',
         'updatedAt',
       ]),
